@@ -1,1 +1,1 @@
-# gh-sonar-all
+# sonar sample
