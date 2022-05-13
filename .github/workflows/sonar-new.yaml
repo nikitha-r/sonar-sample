@@ -35,9 +35,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'false' # Need to change later
         run: |
           pip install --upgrade pip
-          pip install setuptools wheel twine
           pip install -r requirements.txt
-          pip install PyJWT
           pip install coverage
       - name: Run pytest 
         run: |
@@ -51,7 +49,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: coverage-reports
-          path: coverage.html
+          path: coverage.xml
           retention-days: 5
   qa-qc-report-publish:
     name: Publish QA/QC report
