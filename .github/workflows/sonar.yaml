@@ -1,4 +1,4 @@
-name: Only sonar
+name: Only sonar cloud
 env:
   PYTHON_VERSION: '3.8'
   ACR_NAME: mroi
