@@ -1,0 +1,129 @@
+name: Only sonar
+env:
+  PYTHON_VERSION: '3.8'
+  ACR_NAME: mroi
+  TEAM: ca
+  PRODUCT: gra
+  COMPONENT: be
+  COMPONENT_TYPE: api
+  IMAGE_NAME: gra
+  DEPLOYMENT_TYPE: DOCKER_COMPOSE
+  WIKI_CONTAINER_NAME: grabackendwikidata
+  DB_CONTAINER_NAME: grabackendwikidata
+  DATA_CONTAINER_NAME: grabackendwikidata
+  DB_TYPE: ''
+  PARENT_REPOSITORY: 'ab-inbev-analytics/mt-gra-app'
+  CHECKOUT_BRANCH: ${{ github.ref }}
+  PR_AGAINST_BRANCH: ${{ github.ref }}
+  OWNER: 'ab-inbev-analytics'
+on:
+  pull_request:
+    branches:
+      - master
+    # types: [opened, synchronize, reopened]
+    types: [opened, reopened]
+
+jobs:
+  unit-tests-pytest:
+    name: Run unit tests with pytest
+    # needs: [auto-lint, pr-title-validator, pr-labeler, branch-name-validator]
+    # needs: [pr-title-validator, pr-labeler, branch-name-validator]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Install system level libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install libpq-dev gcc
+      - name: Checkout code from remote origin.
+        uses: actions/checkout@v2
+      - name: Setup python version
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+          architecture: 'x64'
+      - name: Create cache depending on requirements file.
+        uses: actions/cache@v2
+        id: cache
+        with:
+          path: ${{ env.pythonLocation }}
+          key: ${{ env.pythonLocation }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ env.pythonLocation }}-pip-
+      - name: Install dependencies & download data.
+        if: steps.cache.outputs.cache-hit != 'false' # Need to change later
+        run: |
+          pip install --upgrade pip
+          pip install setuptools wheel twine
+          pip install -r requirements.txt
+          pip install PyJWT
+          pip install coverage
+      - name: 'Login via Azure CLI'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: 'Azure Key Vaults'
+        uses: Azure/get-keyvault-secrets@v1
+        with:
+          keyvault: "abi-mt-mroi-gb-dev-akv"
+          secrets: 'gra-pytest-domain-dev, gra-pytest-email-id, gra-pytest-password'
+        id: myGetSecretAction
+      - name: Create env file
+        run: |
+          cat << EOF > .env
+          DOMAIN_DEV=${{ steps.myGetSecretAction.outputs.gra-pytest-domain-dev }}
+          LOCAL_EMAIL_ID=${{ steps.myGetSecretAction.outputs.gra-pytest-email-id }}
+          LOCAL_PASSWORD=${{ steps.myGetSecretAction.outputs.gra-pytest-password }}
+          TOKEN_DEV=''
+          TOKEN=''
+          EOF
+      - name: Run pytest 
+        run: |
+          pytest -v tests 
+      - name: Generate test coverage report
+        run: |
+          coverage run -m pytest -v tests
+          coverage html
+          coverage xml
+      - name: Upload test coverage report generated for unit tests using pytest to GitHub packages.
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage-reports
+          path: coverage.html
+          retention-days: 5
+  qa-qc-report-publish:
+    name: Publish QA/QC report
+    # needs: [unit-tests-pytest,qaqc-checks-bandit,qaqc-checks-flake8, qaqc-checks-pylint, qaqc-checks-snyk-python, auto-lint, pr-title-validator, pr-labeler, branch-name-validator]
+    needs: [unit-tests-pytest]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v2
+      - name: (step 2) Get docker version from VERSION file
+        id: getversion
+        run:  |
+          pip install toml-cli
+          RV=$(toml get --toml-path pyproject.toml tool.commitizen.version)
+          VERSION="v${RV}"
+          echo "::set-output name=version::${VERSION}"
+          echo "$VERSION"
+      - name: Download all the reports generated in previous steps
+        uses: actions/download-artifact@v2
+      - name: Run Snyk to check for vulnerabilities - Monitor
+        uses: snyk/actions/python-3.8@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+           command: monitor
+           args: --debug --org=${{ secrets.SNYK_ORGID }} --project-name=${{github.repository}} --file=/github/workspace/requirements.txt --skip-unresolved=true
+      - name: Checking any secret is present in code base using gitleaks
+        uses: zricethezav/gitleaks-action@master
+        continue-on-error: true
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ steps.myGetSecretAction.outputs.mt-gra-sonar-token }}
+
