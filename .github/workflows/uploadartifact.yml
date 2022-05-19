@@ -25,11 +25,7 @@ jobs:
       - uses: actions/checkout@v2
       - run: pwd
       - run: sudo mkdir -p "${pwd}/sample-art"
-      - name: Create  file
-        run: |
-          cat << EOF > "${pwd}/sample-art/hello.txt"
-          Hello
-          EOF
+      - run: sudo bash -c 'echo "hello" > ${pwd}/sample-art/hello.txt'
       - uses: actions/upload-artifact@v3
         with:
           name: arti
