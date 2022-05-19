@@ -23,8 +23,8 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - uses: actions/checkout@v2
-
-      - run: mkdir -p $pwd/sample-art
+      - run: pwd
+      - run: mkdir -p ${pwd}/sample-art
 
       - run: echo hello > $pwd/sample-art/world.txt
 
