@@ -28,10 +28,12 @@ jobs:
       - run: sudo bash -c 'echo "hello" > ${pwd}/sample-art/hello.txt'
       - run: ls -l
       - run: ls ${pwd}/sample-art/
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v2
         with:
           name: sample-art
-          path: $pwd/sample-art/world.txt
+          path: /sample-art/world.txt
+          retention-days: 5
+
       - uses: actions/download-artifact@v3
         id: download
         with:
