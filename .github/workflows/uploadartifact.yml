@@ -26,7 +26,14 @@ jobs:
       - run: pwd
       - run: sudo mkdir -p "${pwd}/sample-art"
       - run: sudo bash -c 'echo "hello" > ${pwd}/sample-art/hello.txt'
+      - run: ls -l
+      - run: ls ${pwd}/sample-art/
       - uses: actions/upload-artifact@v3
         with:
           name: arti
+          path: $pwd/sample-art/world.txt
+      - uses: actions/download-artifact@v3
+        id: download
+        with:
+          name: 'arti'
           path: $pwd/sample-art/world.txt
