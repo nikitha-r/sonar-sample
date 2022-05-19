@@ -26,8 +26,7 @@ jobs:
       - run: pwd
       - run: sudo mkdir -p "${pwd}/sample-art"
       - run: pwd_dirpath="${pwd}/sample-art/world.txt"
-      - run: sudo echo hello > "${pwd_dirpath}"
-
+      - run: sudo echo hello > "${pwd}/sample-art/world.txt"
       - uses: actions/upload-artifact@v3
         with:
           name: arti
