@@ -25,8 +25,9 @@ jobs:
       - uses: actions/checkout@v2
       - run: pwd
       - run: sudo mkdir -p "${pwd}/sample-art"
-      - run: pwd_dirpath="${pwd}/sample-art/world.txt"
-      - run: sudo echo hello > "${pwd_dirpath}"
+      - run: pwd_dirpath="${pwd}/sample-art"
+      - run: pwd_dirpath
+      - run: sudo echo hello > "${pwd_dirpath}/world.txt"
       - uses: actions/upload-artifact@v3
         with:
           name: arti
