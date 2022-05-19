@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: CI
+name: Upload Artifact
 
 # Controls when the workflow will run
 on:
@@ -26,9 +26,9 @@ jobs:
       - run: pwd
       - run: sudo mkdir -p "${pwd}/sample-art"
 
-      - run: echo hello > $pwd/sample-art/world.txt
+      - run: echo hello > "${pwd}/sample-art/world.txt"
 
       - uses: actions/upload-artifact@v3
         with:
-          name: sample-art
+          name: arti
           path: $pwd/sample-art/world.txt
