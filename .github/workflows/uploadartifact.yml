@@ -30,10 +30,10 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: sample-arts
-          path: "${pwd}/sample-art"
+          path: "sample-art"
           retention-days: 5
       - uses: actions/download-artifact@v3
         id: download
         with:
           name: 'sample-arts'
-          path: "$pwd/sample-art"
+          path: "sample-art"
